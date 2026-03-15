@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>iHodinář.app</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@300;400;600&display=swap');
+</style>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Courier New',Courier,monospace;background:#0a0a0a;color:#e8e8e0;min-height:100vh;overflow-x:hidden}
+  :root{
+    --orange:#ff9500;
+    --orange-dim:#cc7800;
+    --green:#30d158;
+    --red:#ff453a;
+    --blue:#0a84ff;
+    --yellow:#ffd60a;
+    --bg:#0a0a0a;
+    --bg2:#161616;
+    --bg3:#1e1e1e;
+    --border:#2a2a2a;
+    --text:#e8e8e0;
+    --muted:#666;
+  }
+
+  /* NAV */
+  .nav{position:fixed;bottom:0;left:0;right:0;background:rgba(16,16,16,.97);border-top:1px solid #1e1e1e;display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);backdrop-filter:blur(20px)}
+  .nav-btn{flex:1;border:none;background:none;color:#444;font-family:'Courier New',Courier,monospace;font-size:9px;padding:10px 4px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;letter-spacing:1px;transition:color .2s}
+  .nav-btn.active{color:var(--orange)}
+  .nav-btn .icon{font-size:22px;line-height:1}
+
+  /* LAYOUT */
+  .page{display:none;padding:0 16px 100px;max-width:480px;margin:0 auto}
+  .page.active{display:block}
+
+  /* HEADER */
+  .app-header{padding:16px 16px 0;max-width:480px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+  .logo-wrap{display:flex;align-items:baseline;gap:0}
+  .logo-i{font-family:Georgia,serif;font-size:22px;color:var(--orange);font-weight:300;letter-spacing:-1px}
+  .logo-rest{font-family:Georgia,serif;font-size:22px;color:#e8e8e0;font-weight:400;letter-spacing:2px}
+  .logo-dot{color:var(--orange)}
+  .logo-sub{font-size:9px;color:#333;letter-spacing:2px;margin-top:2px}
+  .version-badge{font-size:9px;background:#1e1e1e;color:#444;padding:3px 8px;border-radius:20px;letter-spacing:1px;border:1px solid #2a2a2a}
+
+  /* PAGE TITLE */
+  .page-top{padding:20px 0 4px}
+  .page-label{font-size:9px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px}
+  .page-title{font-family:Georgia,serif;font-size:22px;letter-spacing:1px}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px}
+  .card-title{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px}
+
+  /* BUTTONS */
+  .btn{border:none;cursor:pointer;font-family:'Courier New',Courier,monospace;letter-spacing:1px;text-transform:uppercase;border-radius:10px;transition:all .12s;font-size:14px;padding:16px 24px;width:100%;display:block;margin-bottom:10px}
+  .btn-start{background:var(--green);color:#000;font-weight:bold;font-size:17px;padding:22px;border-radius:14px;box-shadow:0 4px 20px rgba(48,209,88,.25)}
+  .btn-stop{background:var(--red);color:#fff;font-weight:bold;box-shadow:0 4px 16px rgba(255,69,58,.2)}
+  .btn-pause{background:var(--yellow);color:#000;box-shadow:0 4px 16px rgba(255,214,10,.15)}
+  .btn-resume{background:var(--blue);color:#fff;box-shadow:0 4px 16px rgba(10,132,255,.2)}
+  .btn-secondary{background:var(--bg3);color:#888;border:1px solid var(--border);font-size:12px;padding:12px}
+  .btn-feedback{background:var(--bg3);color:var(--orange);border:1px solid var(--orange);font-size:12px;padding:12px;letter-spacing:1px}
+  .btn:active{opacity:.75;transform:scale(.98)}
+
+  /* STATUS */
+  .status-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#2a2a2a;flex-shrink:0;transition:all .3s}
+  .dot.prace{background:var(--green);box-shadow:0 0 12px rgba(48,209,88,.6)}
+  .dot.pauza{background:var(--yellow);box-shadow:0 0 12px rgba(255,214,10,.6)}
+  .status-label{font-size:10px;letter-spacing:2px;color:#444;transition:color .3s}
+  .status-label.prace{color:var(--green)}
+  .status-label.pauza{color:var(--yellow)}
+
+  /* STATS */
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px}
+  .stat{background:var(--bg3);border-radius:10px;padding:12px 10px}
+  .stat-label{font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:6px}
+  .stat-value{font-family:Georgia,serif;font-size:20px;color:var(--text)}
+  .stat-value.green{color:var(--green)}
+  .stat-value.orange{color:var(--orange)}
+
+  /* INPUTS */
+  input,textarea,select{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Courier New',Courier,monospace;padding:13px 14px;font-size:14px;width:100%;outline:none;border-radius:10px;margin-bottom:12px;-webkit-appearance:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--orange)}
+  label{font-size:9px;color:#666;display:block;margin-bottom:6px;letter-spacing:1px;text-transform:uppercase}
+  textarea{resize:vertical;min-height:80px}
+
+  /* ZÁZNAMY */
+  .zaznam{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px}
+  .zaznam-datum{font-family:Georgia,serif;font-size:15px;color:var(--orange);margin-bottom:8px}
+  .zaznam-row{display:flex;justify-content:space-between;align-items:center}
+  .zaznam-info{font-size:11px;color:#555;display:flex;gap:12px;flex-wrap:wrap}
+  .zaznam-right{text-align:right;flex-shrink:0;margin-left:10px}
+  .zaznam-hodiny{font-family:Georgia,serif;font-size:18px}
+  .zaznam-kc{font-size:12px;color:var(--green)}
+  .smazat{background:none;border:none;color:#333;font-size:20px;cursor:pointer;padding:2px 6px;line-height:1}
+  .smazat:active{color:var(--red)}
+
+  /* CELKEM */
+  .celkem-bar{background:var(--bg2);border:1px solid var(--orange);border-radius:12px;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+  .celkem-label{font-size:9px;color:#666;letter-spacing:2px;margin-bottom:2px}
+  .celkem-sub{font-size:10px;color:#444}
+  .celkem-value{font-family:Georgia,serif;font-size:28px;color:var(--green)}
+
+  /* FAKTURA */
+  .fakt-header{border-bottom:2px solid var(--orange);padding-bottom:18px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start}
+  .fakt-title{font-family:Georgia,serif;font-size:26px;letter-spacing:3px;color:var(--orange)}
+  .fakt-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:11px}
+  .fakt-table th{text-align:left;padding:7px 0;font-size:8px;color:#555;letter-spacing:2px;border-bottom:1px solid #2a2a2a}
+  .fakt-table th.r,.fakt-table td.r{text-align:right}
+  .fakt-table td{padding:10px 0;border-bottom:1px solid #1a1a1a;font-size:12px}
+  .fakt-celkem{display:flex;justify-content:flex-end;margin-top:4px}
+  .fakt-celkem-box{background:var(--bg2);border:1px solid var(--orange);padding:16px 22px;text-align:right;border-radius:12px}
+  .fakt-celkem-label{font-size:9px;color:#666;letter-spacing:2px;margin-bottom:6px}
+  .fakt-celkem-value{font-family:Georgia,serif;font-size:30px;color:var(--orange)}
+  .fakt-celkem-sub{font-size:10px;color:#555;margin-top:4px}
+  .btn-print{background:var(--green);color:#000;font-weight:bold;margin-bottom:14px;box-shadow:0 4px 16px rgba(48,209,88,.2)}
+  .empty{text-align:center;padding:50px 20px;color:#333;font-size:13px}
+  .empty-icon{font-size:44px;display:block;margin-bottom:14px}
+
+  /* FEEDBACK MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:flex-end;backdrop-filter:blur(4px)}
+  .modal-overlay.open{display:flex}
+  .modal{background:#161616;border:1px solid #2a2a2a;border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;margin:0 auto}
+  .modal-title{font-family:Georgia,serif;font-size:20px;margin-bottom:6px;color:var(--orange)}
+  .modal-sub{font-size:11px;color:#555;margin-bottom:20px;letter-spacing:1px}
+  .modal-close{position:absolute;top:16px;right:20px;background:none;border:none;color:#555;font-size:24px;cursor:pointer}
+  .star-row{display:flex;gap:8px;margin-bottom:20px}
+  .star{font-size:32px;cursor:pointer;opacity:.3;transition:all .15s;background:none;border:none;padding:0}
+  .star.active{opacity:1}
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .chip{background:var(--bg3);border:1px solid var(--border);color:#888;font-family:'Courier New',Courier,monospace;font-size:11px;padding:7px 12px;border-radius:20px;cursor:pointer;transition:all .15s}
+  .chip.active{background:var(--orange);border-color:var(--orange);color:#000}
+  .chip:active{transform:scale(.95)}
+  .sent-msg{text-align:center;padding:30px 20px;display:none}
+  .sent-msg .icon{font-size:48px;display:block;margin-bottom:12px}
+
+  /* DIVIDER */
+  .divider{height:1px;background:var(--border);margin:16px 0}
+
+  @media print{
+    .nav,.app-header,.no-print{display:none!important}
+    body{background:#fff;color:#000}
+    .page{display:block!important;padding:20px}
+    .card,.zaznam,.celkem-bar,.fakt-header,.fakt-celkem-box,.stat{background:#fff!important;border-color:#ddd!important;color:#000!important}
+    .fakt-title,.celkem-value,.fakt-celkem-value,.zaznam-datum,.stat-value{color:#000!important}
+    .stat-label,.card-title,.zaznam-info,.fakt-celkem-label,.fakt-celkem-sub,.fakt-table th{color:#666!important}
+    .zaznam-kc,.stat-value.green{color:#1a7a3f!important}
+    .logo-i,.logo-dot{color:#e67e00!important}
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="app-header no-print">
+  <div>
+    <div class="logo-wrap">
+      <span class="logo-i">i</span><span class="logo-rest">Hodinář<span class="logo-dot">.</span>app</span>
+    </div>
+    <div class="logo-sub">EVIDENCE PRACOVNÍ DOBY</div>
+  </div>
+  <div class="version-badge">v1.0</div>
+</div>
+
+<!-- DNES -->
+<div class="page active" id="page-dnes">
+  <div class="page-top">
+    <div class="page-label">dnešní datum</div>
+    <div class="page-title" id="datum-dnes"></div>
+  </div>
+
+  <div style="height:16px"></div>
+
+  <div class="card" id="card-stav">
+    <div class="status-row">
+      <div class="dot" id="stav-dot"></div>
+      <div class="status-label" id="stav-label">MIMO PRACOVNÍ DOBU</div>
+    </div>
+    <div class="stats" id="stats-box" style="display:none">
+      <div class="stat">
+        <div class="stat-label">PŘÍCHOD</div>
+        <div class="stat-value green" id="stat-prichod">–</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">PAUZY</div>
+        <div class="stat-value orange" id="stat-pauzy">0×</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">HODINY</div>
+        <div class="stat-value" id="stat-hodiny">0h 0m</div>
+      </div>
+    </div>
+    <div id="btn-area">
+      <div style="text-align:center;padding:16px 0 6px">
+        <div style="font-size:12px;color:#3a3a3a;margin-bottom:18px;letter-spacing:1px">ZAČNI ZAZNAMENÁVAT PRACOVNÍ DOBU</div>
+        <button class="btn btn-start" onclick="prichod()">▶ PŘÍCHOD</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="pauzy-list" style="display:none">
+    <div class="card-title">Dnešní pauzy</div>
+    <div id="pauzy-items"></div>
+  </div>
+</div>
+
+<!-- PŘEHLED -->
+<div class="page" id="page-prehled">
+  <div class="page-top" style="display:flex;justify-content:space-between;align-items:flex-end">
+    <div>
+      <div class="page-label">přehled docházky</div>
+      <div class="page-title" id="prehled-pocet">0 DNÍ</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:2px">CELKEM</div>
+      <div style="font-family:Georgia,serif;font-size:24px;color:var(--orange)" id="prehled-hodiny">0.00 h</div>
+    </div>
+  </div>
+  <div style="height:16px"></div>
+  <div id="zaznamy-list"></div>
+</div>
+
+<!-- FAKTURA -->
+<div class="page" id="page-faktura">
+  <div class="page-top no-print">
+    <div class="page-label">výpočet faktury</div>
+    <div class="page-title">FAKTURA</div>
+  </div>
+  <div style="height:14px" class="no-print"></div>
+  <button class="btn btn-print no-print" onclick="window.print()">🖨 ULOŽIT JAKO PDF</button>
+  <div id="faktura-obsah"></div>
+</div>
+
+<!-- NASTAVENÍ -->
+<div class="page" id="page-nastaveni">
+  <div class="page-top">
+    <div class="page-label">nastavení</div>
+    <div class="page-title">PROFIL</div>
+  </div>
+  <div style="height:16px"></div>
+
+  <div class="card">
+    <div class="card-title">Fakturační údaje</div>
+    <label>Vaše jméno / firma</label>
+    <input type="text" id="set-jmeno" placeholder="Jan Novák – svářeč" oninput="saveSettings()">
+    <label>IČO</label>
+    <input type="text" id="set-ico" placeholder="12345678" oninput="saveSettings()">
+    <label>Odběratel (název, adresa)</label>
+    <textarea id="set-odberatel" placeholder="Firma s.r.o.&#10;Ulice 123&#10;Praha 1" oninput="saveSettings()"></textarea>
+    <label>Popis práce na faktuře</label>
+    <input type="text" id="set-popis" placeholder="Svářečské práce" oninput="saveSettings()">
+  </div>
+
+  <div class="card">
+    <div class="card-title">Hodinová sazba</div>
+    <label>Kč za hodinu</label>
+    <input type="number" id="set-sazba" value="450" oninput="saveSettings()">
+    <div style="font-size:12px;color:#555" id="sazba-preview"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Zpětná vazba</div>
+    <div style="font-size:12px;color:#555;margin-bottom:14px;line-height:1.6">Pomoz nám zlepšit iHodinář.app — napiš co se ti líbí nebo co chybí.</div>
+    <button class="btn btn-feedback" onclick="openFeedback()">💬 NAPSAT ZPĚTNOU VAZBU</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Data</div>
+    <button class="btn btn-secondary" onclick="exportData()">📤 Exportovat zálohu</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">📥 Importovat zálohu</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    <div class="divider"></div>
+    <button class="btn btn-secondary" style="color:var(--red);border-color:#3a1a1a" onclick="smazatVse()">🗑 Smazat všechna data</button>
+  </div>
+
+  <div style="text-align:center;font-size:10px;color:#2a2a2a;padding:10px 0 20px;letter-spacing:2px">iHODINÁŘ.APP v1.0</div>
+</div>
+
+<!-- FEEDBACK MODAL -->
+<div class="modal-overlay" id="feedback-modal" onclick="closeFeedbackOutside(event)">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeFeedback()">×</button>
+    <div id="feedback-form-wrap">
+      <div class="modal-title">Zpětná vazba</div>
+      <div class="modal-sub">Pomůžeš nám udělat appku lepší ⚡</div>
+
+      <label>HODNOCENÍ</label>
+      <div class="star-row" id="star-row">
+        <button class="star" onclick="setStar(1)">★</button>
+        <button class="star" onclick="setStar(2)">★</button>
+        <button class="star" onclick="setStar(3)">★</button>
+        <button class="star" onclick="setStar(4)">★</button>
+        <button class="star" onclick="setStar(5)">★</button>
+      </div>
+
+      <label>CO TI NEJVÍCE CHYBÍ?</label>
+      <div class="chip-row" id="chip-row">
+        <button class="chip" onclick="toggleChip(this)">Export Excel</button>
+        <button class="chip" onclick="toggleChip(this)">Sync mezi zařízeními</button>
+        <button class="chip" onclick="toggleChip(this)">Více jazyků</button>
+        <button class="chip" onclick="toggleChip(this)">Tmavý/světlý režim</button>
+        <button class="chip" onclick="toggleChip(this)">Připomínky</button>
+        <button class="chip" onclick="toggleChip(this)">Více uživatelů</button>
+        <button class="chip" onclick="toggleChip(this)">Jiné</button>
+      </div>
+
+      <label>TVŮJ KOMENTÁŘ (nepovinné)</label>
+      <textarea id="fb-text" placeholder="Napiš cokoli..." rows="3"></textarea>
+
+      <button class="btn btn-start" style="font-size:14px;padding:16px" onclick="sendFeedback()">ODESLAT ⚡</button>
+    </div>
+    <div class="sent-msg" id="sent-msg">
+      <span class="icon">🙏</span>
+      <div style="font-family:Georgia,serif;font-size:20px;margin-bottom:8px;color:var(--orange)">DÍKY!</div>
+      <div style="font-size:12px;color:#666;line-height:1.6">Tvoje zpětná vazba nám pomůže zlepšit iHodinář.app.</div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('dnes',this)">
+    <span class="icon">⏱</span>DNES
+  </button>
+  <button class="nav-btn" onclick="showPage('prehled',this)">
+    <span class="icon">📋</span>PŘEHLED
+  </button>
+  <button class="nav-btn" onclick="showPage('faktura',this)">
+    <span class="icon">🧾</span>FAKTURA
+  </button>
+  <button class="nav-btn" onclick="showPage('nastaveni',this)">
+    <span class="icon">⚙️</span>PROFIL
+  </button>
+</nav>
+
+<script>
+const KEY='ihodinar_v1';
+const FEEDBACK_EMAIL='leskosamuel7@gmail.com';
+let data={zaznamy:[],aktualniDen:null,sazba:450,jmeno:'',ico:'',odberatel:'',popis:'Svářečské práce'};
+let selectedStar=0;
+
+function load(){try{const r=localStorage.getItem(KEY);if(r)data=Object.assign(data,JSON.parse(r));}catch(e){}}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));}
+
+function fmt(ms){if(!ms||ms<0)return'0h 0m';const m=Math.floor(ms/60000),h=Math.floor(m/60);return h+'h '+(m%60)+'m';}
+function fmtTime(iso){if(!iso)return'–';return new Date(iso).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});}
+function fmtDate(iso){if(!iso)return'';return new Date(iso).toLocaleDateString('cs-CZ',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function calcNet(z){
+  if(!z||!z.prichod||!z.odchod)return 0;
+  const total=new Date(z.odchod)-new Date(z.prichod);
+  const pauza=(z.pauzy||[]).reduce((s,p)=>p.start&&p.end?s+(new Date(p.end)-new Date(p.start)):s,0);
+  return Math.max(0,total-pauza);
+}
+
+function showPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='prehled')renderPrehled();
+  if(name==='faktura')renderFaktura();
+  if(name==='nastaveni')renderNastaveni();
+}
+
+function prichod(){
+  data.aktualniDen={id:Date.now(),prichod:new Date().toISOString(),odchod:null,pauzy:[],aktivniPauza:null};
+  save();renderDnes();
+}
+function odchod(){
+  if(!data.aktualniDen)return;
+  let d=data.aktualniDen;
+  if(d.aktivniPauza){d.pauzy.push({start:d.aktivniPauza,end:new Date().toISOString()});d.aktivniPauza=null;}
+  d.odchod=new Date().toISOString();
+  data.zaznamy.push(d);
+  data.aktualniDen=null;
+  save();renderDnes();
+}
+function zacatekPauzy(){
+  if(!data.aktualniDen||data.aktualniDen.aktivniPauza)return;
+  data.aktualniDen.aktivniPauza=new Date().toISOString();
+  save();renderDnes();
+}
+function konecPauzy(){
+  if(!data.aktualniDen||!data.aktualniDen.aktivniPauza)return;
+  data.aktualniDen.pauzy.push({start:data.aktualniDen.aktivniPauza,end:new Date().toISOString()});
+  data.aktualniDen.aktivniPauza=null;
+  save();renderDnes();
+}
+
+function renderDnes(){
+  const d=data.aktualniDen;
+  const dot=document.getElementById('stav-dot');
+  const lbl=document.getElementById('stav-label');
+  const stats=document.getElementById('stats-box');
+  const btns=document.getElementById('btn-area');
+  const pl=document.getElementById('pauzy-list');
+  const pi=document.getElementById('pauzy-items');
+  document.getElementById('datum-dnes').textContent=new Date().toLocaleDateString('cs-CZ',{weekday:'long',day:'numeric',month:'long'}).toUpperCase();
+  if(!d){
+    dot.className='dot';lbl.className='status-label';lbl.textContent='MIMO PRACOVNÍ DOBU';
+    stats.style.display='none';pl.style.display='none';
+    btns.innerHTML='<div style="text-align:center;padding:16px 0 6px"><div style="font-size:12px;color:#3a3a3a;margin-bottom:18px;letter-spacing:1px">ZAČNI ZAZNAMENÁVAT PRACOVNÍ DOBU</div><button class="btn btn-start" onclick="prichod()">▶ PŘÍCHOD</button></div>';
+    return;
+  }
+  const jePauza=!!d.aktivniPauza;
+  dot.className='dot '+(jePauza?'pauza':'prace');
+  lbl.className='status-label '+(jePauza?'pauza':'prace');
+  lbl.textContent=jePauza?'PAUZA':'PRACUJI';
+  stats.style.display='grid';
+  document.getElementById('stat-prichod').textContent=fmtTime(d.prichod);
+  document.getElementById('stat-pauzy').textContent=(d.pauzy||[]).length+'×';
+  document.getElementById('stat-hodiny').textContent=fmt(calcNet({...d,odchod:new Date().toISOString()}));
+  btns.innerHTML='';
+  if(!jePauza){btns.innerHTML+='<button class="btn btn-pause" onclick="zacatekPauzy()">⏸ PAUZA</button>';}
+  else{btns.innerHTML+='<button class="btn btn-resume" onclick="konecPauzy()">▶ POKRAČOVAT</button>';}
+  btns.innerHTML+='<button class="btn btn-stop" onclick="odchod()">⏹ ODCHOD</button>';
+  const pauzy=d.pauzy||[];
+  if(pauzy.length>0){
+    pl.style.display='block';
+    pi.innerHTML=pauzy.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #1a1a1a;font-size:11px;color:#666"><span>Pauza ${i+1}: ${fmtTime(p.start)} – ${fmtTime(p.end)}</span><span style="color:var(--yellow)">${fmt(new Date(p.end)-new Date(p.start))}</span></div>`).join('');
+  }else{pl.style.display='none';}
+}
+
+function renderPrehled(){
+  const z=data.zaznamy;
+  document.getElementById('prehled-pocet').textContent=z.length+' DNÍ';
+  const celkH=z.reduce((s,z)=>s+calcNet(z),0)/3600000;
+  document.getElementById('prehled-hodiny').textContent=celkH.toFixed(2)+' h';
+  const el=document.getElementById('zaznamy-list');
+  if(z.length===0){el.innerHTML='<div class="empty"><span class="empty-icon">📋</span>Zatím žádné záznamy.<br><span style="color:#2a2a2a">Začni na záložce DNES.</span></div>';return;}
+  el.innerHTML=z.slice().reverse().map(z=>{
+    const h=calcNet(z)/3600000;
+    const kc=Math.round(h*data.sazba);
+    return`<div class="zaznam"><div class="zaznam-datum">${fmtDate(z.prichod)}</div><div class="zaznam-row"><div class="zaznam-info"><span>▶ ${fmtTime(z.prichod)}</span><span>⏹ ${fmtTime(z.odchod)}</span><span style="color:var(--yellow)">⏸ ${(z.pauzy||[]).length}×</span></div><div class="zaznam-right"><div class="zaznam-hodiny">${h.toFixed(2)} h</div><div class="zaznam-kc">${kc.toLocaleString('cs-CZ')} Kč</div><button class="smazat" onclick="smazatZaznam(${z.id})">×</button></div></div></div>`;
+  }).join('');
+  const celkKc=Math.round(celkH*data.sazba);
+  el.innerHTML+=`<div class="celkem-bar"><div><div class="celkem-label">CELKOVÁ ČÁSTKA</div><div class="celkem-sub">${celkH.toFixed(2)} h × ${data.sazba} Kč/h</div></div><div class="celkem-value">${celkKc.toLocaleString('cs-CZ')} Kč</div></div>`;
+}
+
+function smazatZaznam(id){
+  if(!confirm('Smazat tento záznam?'))return;
+  data.zaznamy=data.zaznamy.filter(z=>z.id!==id);
+  save();renderPrehled();
+}
+
+function renderFaktura(){
+  const z=data.zaznamy;
+  const celkH=z.reduce((s,z)=>s+calcNet(z),0)/3600000;
+  const celkKc=Math.round(celkH*data.sazba);
+  const el=document.getElementById('faktura-obsah');
+  const radky=z.length===0?'<tr><td colspan="5" style="text-align:center;color:#444;padding:20px;font-size:12px">Žádné záznamy</td></tr>':
+    z.map(zz=>{const h=calcNet(zz)/3600000;return`<tr><td>${data.popis||'Svářečské práce'}</td><td class="r" style="color:#666">${fmtDate(zz.prichod)}</td><td class="r">${h.toFixed(2)}</td><td class="r" style="color:#666">${data.sazba}</td><td class="r" style="color:var(--green)">${Math.round(h*data.sazba).toLocaleString('cs-CZ')}</td></tr>`;}).join('');
+  el.innerHTML=`<div class="fakt-header"><div><div class="fakt-title">FAKTURA</div><div style="font-size:10px;color:#555;margin-top:4px;letter-spacing:1px">DATUM: ${new Date().toLocaleDateString('cs-CZ')}</div></div><div style="text-align:right"><div style="font-family:Georgia,serif;font-size:14px">${data.jmeno||'Vaše jméno'}</div><div style="font-size:11px;color:#666">IČO: ${data.ico||'–'}</div></div></div>${data.odberatel?`<div style="margin-bottom:18px"><div style="font-size:8px;color:#555;letter-spacing:2px;margin-bottom:6px">ODBĚRATEL</div><div style="white-space:pre-line;font-size:12px;color:#aaa">${data.odberatel}</div></div>`:''}<table class="fakt-table"><thead><tr><th>POPIS</th><th class="r">DATUM</th><th class="r">H</th><th class="r">KČ/H</th><th class="r">ČÁSTKA</th></tr></thead><tbody>${radky}</tbody></table><div class="fakt-celkem"><div class="fakt-celkem-box"><div class="fakt-celkem-label">CELKEM K ÚHRADĚ</div><div class="fakt-celkem-value">${celkKc.toLocaleString('cs-CZ')} Kč</div><div class="fakt-celkem-sub">${celkH.toFixed(2)} h × ${data.sazba} Kč/h</div></div></div>`;
+}
+
+function renderNastaveni(){
+  document.getElementById('set-jmeno').value=data.jmeno||'';
+  document.getElementById('set-ico').value=data.ico||'';
+  document.getElementById('set-odberatel').value=data.odberatel||'';
+  document.getElementById('set-popis').value=data.popis||'Svářečské práce';
+  document.getElementById('set-sazba').value=data.sazba||450;
+  updateSazbaPreview();
+}
+function saveSettings(){
+  data.jmeno=document.getElementById('set-jmeno').value;
+  data.ico=document.getElementById('set-ico').value;
+  data.odberatel=document.getElementById('set-odberatel').value;
+  data.popis=document.getElementById('set-popis').value;
+  data.sazba=Number(document.getElementById('set-sazba').value)||450;
+  save();updateSazbaPreview();
+}
+function updateSazbaPreview(){
+  const celkH=data.zaznamy.reduce((s,z)=>s+calcNet(z),0)/3600000;
+  document.getElementById('sazba-preview').textContent=celkH>0?`Při ${celkH.toFixed(1)} h = ${Math.round(celkH*data.sazba).toLocaleString('cs-CZ')} Kč`:'';
+}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='ihodinar-zaloha-'+new Date().toISOString().split('T')[0]+'.json';a.click();
+}
+function importData(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{data=JSON.parse(ev.target.result);save();renderNastaveni();renderDnes();alert('Data importována!');}catch{alert('Chyba při importu.');}};
+  r.readAsText(file);
+}
+function smazatVse(){
+  if(!confirm('Opravdu smazat VŠECHNA data?'))return;
+  data={zaznamy:[],aktualniDen:null,sazba:450,jmeno:'',ico:'',odberatel:'',popis:'Svářečské práce'};
+  save();renderDnes();renderNastaveni();
+}
+
+// FEEDBACK
+function openFeedback(){
+  selectedStar=0;
+  document.querySelectorAll('.star').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  document.getElementById('fb-text').value='';
+  document.getElementById('feedback-form-wrap').style.display='block';
+  document.getElementById('sent-msg').style.display='none';
+  document.getElementById('feedback-modal').classList.add('open');
+}
+function closeFeedback(){document.getElementById('feedback-modal').classList.remove('open');}
+function closeFeedbackOutside(e){if(e.target===document.getElementById('feedback-modal'))closeFeedback();}
+function setStar(n){
+  selectedStar=n;
+  document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('active',i<n));
+}
+function toggleChip(el){el.classList.toggle('active');}
+function sendFeedback(){
+  const hvezdy='★'.repeat(selectedStar)+'☆'.repeat(5-selectedStar);
+  const chipy=[...document.querySelectorAll('.chip.active')].map(c=>c.textContent).join(', ')||'–';
+  const komentar=document.getElementById('fb-text').value||'–';
+  const predmet=encodeURIComponent('iHodinář.app – zpětná vazba');
+  const telo=encodeURIComponent(`Hodnocení: ${hvezdy} (${selectedStar}/5)\n\nChybí mi: ${chipy}\n\nKomentář: ${komentar}\n\n---\nOdesláno z iHodinář.app`);
+  window.location.href=`mailto:${FEEDBACK_EMAIL}?subject=${predmet}&body=${telo}`;
+  document.getElementById('feedback-form-wrap').style.display='none';
+  document.getElementById('sent-msg').style.display='block';
+  setTimeout(closeFeedback,2500);
+}
+
+// INIT
+load();renderDnes();renderNastaveni();
+setInterval(()=>{
+  if(data.aktualniDen&&!data.aktualniDen.odchod){
+    const el=document.getElementById('stat-hodiny');
+    if(el)el.textContent=fmt(calcNet({...data.aktualniDen,odchod:new Date().toISOString()}));
+  }
+},10000);
+</script>
+</body>
+</html>
