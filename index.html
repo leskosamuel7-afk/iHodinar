@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0a0a">
-<title>iHodinar.app</title>
+<title>iHodinář.app</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Courier New',Courier,monospace;background:#0a0a0a;color:#e8e8e0;min-height:100vh;overflow-x:hidden}
@@ -34,6 +34,7 @@ body{font-family:'Courier New',Courier,monospace;background:#0a0a0a;color:#e8e8e
 .btn-pause{background:var(--yellow);color:#000}
 .btn-resume{background:var(--blue);color:#fff}
 .btn-secondary{background:var(--bg3);color:#888;border:1px solid var(--border);font-size:12px;padding:12px}
+.btn-orange{background:var(--orange);color:#000;font-weight:bold}
 .btn-feedback{background:var(--bg3);color:var(--orange);border:1px solid var(--orange);font-size:12px;padding:12px}
 .btn:active{opacity:.75;transform:scale(.98)}
 .status-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
@@ -82,7 +83,7 @@ textarea{resize:vertical;min-height:80px}
 .empty-icon{font-size:44px;display:block;margin-bottom:14px}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:flex-end}
 .modal-overlay.open{display:flex}
-.modal{background:#161616;border:1px solid #2a2a2a;border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;margin:0 auto}
+.modal{background:#161616;border:1px solid #2a2a2a;border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;margin:0 auto;max-height:90vh;overflow-y:auto}
 .modal-title{font-size:20px;margin-bottom:6px;color:var(--orange);font-weight:bold}
 .modal-sub{font-size:11px;color:#555;margin-bottom:20px;letter-spacing:1px}
 .modal-close{position:absolute;top:16px;right:20px;background:none;border:none;color:#555;font-size:24px;cursor:pointer}
@@ -95,13 +96,14 @@ textarea{resize:vertical;min-height:80px}
 .sent-msg{text-align:center;padding:30px 20px;display:none}
 .sent-msg .icon{font-size:48px;display:block;margin-bottom:12px}
 .divider{height:1px;background:var(--border);margin:16px 0}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media print{.nav,.app-header,.no-print{display:none!important}body{background:#fff;color:#000}.page{display:block!important;padding:20px}.card,.zaznam,.celkem-bar,.fakt-celkem-box,.stat{background:#fff!important;border-color:#ddd!important;color:#000!important}.fakt-title,.celkem-value,.fakt-celkem-value,.zaznam-datum,.stat-value{color:#000!important}.zaznam-kc,.stat-value.green{color:#1a7a3f!important}}
 </style>
 </head>
 <body>
   <div class="app-header no-print">
-<div><div style="display:flex;align-items:baseline"><span class="logo-i">i</span><span class="logo-rest">Hodinár<span class="logo-dot">.</span>app</span></div><div class="logo-sub">EVIDENCE PRACOVNI DOBY</div></div>
-<div class="version-badge">v1.0</div>
+<div><div style="display:flex;align-items:baseline"><span class="logo-i">i</span><span class="logo-rest">Hodin&#225;&#345;<span class="logo-dot">.</span>app</span></div><div class="logo-sub">EVIDENCE PRACOVNI DOBY</div></div>
+<div class="version-badge">v1.1</div>
 </div>
 <div class="page active" id="page-dnes">
 <div class="page-top"><div class="page-label">dnesni datum</div><div class="page-title" id="datum-dnes"></div></div>
@@ -122,7 +124,8 @@ textarea{resize:vertical;min-height:80px}
 <div><div class="page-label">prehled dochazky</div><div class="page-title" id="prehled-pocet">0 DNI</div></div>
 <div style="text-align:right"><div style="font-size:9px;color:var(--muted);letter-spacing:2px">CELKEM</div><div style="font-size:24px;color:var(--orange);font-weight:bold" id="prehled-hodiny">0.00 h</div></div>
 </div>
-<div style="height:16px"></div>
+<div style="height:12px"></div>
+<button class="btn btn-orange" onclick="openPridat()" style="font-size:13px;padding:14px">+ PRIDAT STARSI ZAZNAM</button>
 <div id="zaznamy-list"></div>
 </div>
 <div class="page" id="page-faktura">
@@ -138,14 +141,14 @@ textarea{resize:vertical;min-height:80px}
 <label>VASE JMENO / FIRMA</label><input type="text" id="set-jmeno" placeholder="Jan Novak" oninput="saveSettings()">
 <label>ICO</label><input type="text" id="set-ico" placeholder="12345678" oninput="saveSettings()">
 <label>ODBERATEL</label><textarea id="set-odberatel" placeholder="Firma s.r.o." oninput="saveSettings()"></textarea>
-<label>POPIS PRACE NA FAKTURE</label><input type="text" id="set-popis" placeholder="Svavrecske prace" oninput="saveSettings()">
+<label>POPIS PRACE NA FAKTURE</label><input type="text" id="set-popis" placeholder="Svarecske prace" oninput="saveSettings()">
 </div>
 <div class="card"><div class="card-title">Hodinova sazba</div>
 <label>KC ZA HODINU</label><input type="number" id="set-sazba" value="450" oninput="saveSettings()">
 <div style="font-size:12px;color:#555" id="sazba-preview"></div>
 </div>
 <div class="card"><div class="card-title">Zpetna vazba</div>
-<div style="font-size:12px;color:#555;margin-bottom:14px;line-height:1.6">Pomoz nam zlepsit iHodinar.app</div>
+<div style="font-size:12px;color:#555;margin-bottom:14px;line-height:1.6">Pomoz nam zlepsit iHodin&#225;&#345;.app</div>
 <button class="btn btn-feedback" onclick="openFeedback()">&#128172; NAPSAT ZPETNOU VAZBU</button>
 </div>
 <div class="card"><div class="card-title">Data</div>
@@ -155,15 +158,31 @@ textarea{resize:vertical;min-height:80px}
 <div class="divider"></div>
 <button class="btn btn-secondary" style="color:var(--red);border-color:#3a1a1a" onclick="smazatVse()">&#128465; Smazat vsechna data</button>
 </div>
-<div style="text-align:center;font-size:10px;color:#2a2a2a;padding:10px 0 20px;letter-spacing:2px">iHODINAR.APP v1.0</div>
+<div style="text-align:center;font-size:10px;color:#2a2a2a;padding:10px 0 20px;letter-spacing:2px">iHODIN&#193;&#344;.APP v1.1</div>
 </div>
+<div class="modal-overlay" id="pridat-modal" onclick="if(event.target===this)closePridat()">
+<div class="modal" style="position:relative">
+<button class="modal-close" onclick="closePridat()">x</button>
+<div class="modal-title">Pridat zaznam</div>
+<div class="modal-sub">Rucni zadani starsich dat</div>
+<label>DATUM</label><input type="date" id="pridat-datum" style="margin-bottom:16px">
+<div class="row2">
+<div><label>PRICHOD</label><input type="time" id="pridat-prichod"></div>
+<div><label>ODCHOD</label><input type="time" id="pridat-odchod"></div>
+</div>
+<label>PAUZA (minuty)</label><input type="number" id="pridat-pauza" placeholder="0" min="0" style="margin-bottom:20px">
+<button class="btn btn-start" style="font-size:14px;padding:16px" onclick="savePridat()">ULOZIT ZAZNAM</button>
+</div></div>
 <div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)closeEdit()">
 <div class="modal" style="position:relative">
 <button class="modal-close" onclick="closeEdit()">x</button>
 <div class="modal-title">Upravit zaznam</div>
 <div class="modal-sub" id="edit-datum"></div>
-<label>PRICHOD</label><input type="time" id="edit-prichod" style="margin-bottom:16px">
-<label>ODCHOD</label><input type="time" id="edit-odchod" style="margin-bottom:20px">
+<div class="row2">
+<div><label>PRICHOD</label><input type="time" id="edit-prichod"></div>
+<div><label>ODCHOD</label><input type="time" id="edit-odchod"></div>
+</div>
+<label>PAUZA (minuty)</label><input type="number" id="edit-pauza" placeholder="0" min="0" style="margin-bottom:20px">
 <button class="btn btn-start" style="font-size:14px;padding:16px" onclick="saveEdit()">ULOZIT</button>
 </div></div>
 <div class="modal-overlay" id="feedback-modal" onclick="if(event.target===this)closeFeedback()">
@@ -171,7 +190,7 @@ textarea{resize:vertical;min-height:80px}
 <button class="modal-close" onclick="closeFeedback()">x</button>
 <div id="feedback-form-wrap">
 <div class="modal-title">Zpetna vazba</div>
-<div class="modal-sub">Pomozez nam udelat appku lepsi</div>
+<div class="modal-sub">Pomoz nam udelat appku lepsi</div>
 <label>HODNOCENI</label>
 <div class="star-row"><button class="star" onclick="setStar(1)">&#9733;</button><button class="star" onclick="setStar(2)">&#9733;</button><button class="star" onclick="setStar(3)">&#9733;</button><button class="star" onclick="setStar(4)">&#9733;</button><button class="star" onclick="setStar(5)">&#9733;</button></div>
 <label>CO TI NEJVICE CHYBI?</label>
@@ -213,6 +232,9 @@ function calcNet(z){
   const total=new Date(z.odchod)-new Date(z.prichod);
   const pauza=(z.pauzy||[]).reduce((s,p)=>p.start&&p.end?s+(new Date(p.end)-new Date(p.start)):s,0);
   return Math.max(0,total-pauza);
+}
+function getPauzaMin(z){
+  return Math.round((z.pauzy||[]).reduce((s,p)=>p.start&&p.end?s+(new Date(p.end)-new Date(p.start)):s,0)/60000);
 }
 
 function showPage(name,btn){
@@ -294,7 +316,8 @@ function renderPrehled(){
   el.innerHTML=z.slice().reverse().map(function(z){
     const h=calcNet(z)/3600000;
     const kc=Math.round(h*data.sazba);
-    return '<div class="zaznam"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="zaznam-datum">'+fmtDate(z.prichod)+'</div><button class="btn btn-secondary" style="padding:4px 12px;font-size:11px;width:auto;margin:0" onclick="openEdit('+z.id+')">UPRAVIT</button></div><div class="zaznam-row"><div class="zaznam-info"><span>'+fmtTime(z.prichod)+'</span><span>'+fmtTime(z.odchod)+'</span><span style="color:var(--yellow)">'+(z.pauzy||[]).length+'x pauza</span></div><div class="zaznam-right"><div class="zaznam-hodiny">'+h.toFixed(2)+' h</div><div class="zaznam-kc">'+kc.toLocaleString('cs-CZ')+' Kc</div><button class="smazat" onclick="smazatZaznam('+z.id+')">x</button></div></div></div>';
+    const pm=getPauzaMin(z);
+    return '<div class="zaznam"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="zaznam-datum">'+fmtDate(z.prichod)+'</div><button class="btn btn-secondary" style="padding:4px 12px;font-size:11px;width:auto;margin:0" onclick="openEdit('+z.id+')">UPRAVIT</button></div><div class="zaznam-row"><div class="zaznam-info"><span>'+fmtTime(z.prichod)+'</span><span>'+fmtTime(z.odchod)+'</span><span style="color:var(--yellow)">pauza '+pm+' min</span></div><div class="zaznam-right"><div class="zaznam-hodiny">'+h.toFixed(2)+' h</div><div class="zaznam-kc">'+kc.toLocaleString('cs-CZ')+' Kc</div><button class="smazat" onclick="smazatZaznam('+z.id+')">x</button></div></div></div>';
   }).join('');
   const celkKc=Math.round(celkH*data.sazba);
   el.innerHTML+='<div class="celkem-bar"><div><div class="celkem-label">CELKOVA CASTKA</div><div class="celkem-sub">'+celkH.toFixed(2)+' h x '+data.sazba+' Kc/h</div></div><div class="celkem-value">'+celkKc.toLocaleString('cs-CZ')+' Kc</div></div>';
@@ -306,6 +329,32 @@ function smazatZaznam(id){
   save();renderPrehled();
 }
 
+function openPridat(){
+  var dnes=new Date().toISOString().split('T')[0];
+  document.getElementById('pridat-datum').value=dnes;
+  document.getElementById('pridat-prichod').value='06:00';
+  document.getElementById('pridat-odchod').value='14:00';
+  document.getElementById('pridat-pauza').value='30';
+  document.getElementById('pridat-modal').classList.add('open');
+}
+function closePridat(){document.getElementById('pridat-modal').classList.remove('open');}
+function savePridat(){
+  var datum=document.getElementById('pridat-datum').value;
+  var pc=document.getElementById('pridat-prichod').value;
+  var oc=document.getElementById('pridat-odchod').value;
+  var pauzaMin=parseInt(document.getElementById('pridat-pauza').value)||0;
+  if(!datum||!pc||!oc){alert('Vyplnte vsechna pole!');return;}
+  var prichod=new Date(datum+'T'+pc+':00');
+  var odchod=new Date(datum+'T'+oc+':00');
+  if(odchod<=prichod){alert('Odchod musi byt po prichodu!');return;}
+  var pauzaStart=new Date(prichod.getTime()+Math.round((odchod-prichod)/2));
+  var pauzaEnd=new Date(pauzaStart.getTime()+pauzaMin*60000);
+  var zaznam={id:Date.now(),prichod:prichod.toISOString(),odchod:odchod.toISOString(),pauzy:pauzaMin>0?[{start:pauzaStart.toISOString(),end:pauzaEnd.toISOString()}]:[],aktivniPauza:null};
+  data.zaznamy.push(zaznam);
+  data.zaznamy.sort(function(a,b){return new Date(a.prichod)-new Date(b.prichod);});
+  save();closePridat();renderPrehled();
+}
+
 function openEdit(id){
   const z=data.zaznamy.find(z=>z.id===id);
   if(!z)return;
@@ -315,6 +364,7 @@ function openEdit(id){
   const o=new Date(z.odchod);
   document.getElementById('edit-prichod').value=p.getHours().toString().padStart(2,'0')+':'+p.getMinutes().toString().padStart(2,'0');
   document.getElementById('edit-odchod').value=o.getHours().toString().padStart(2,'0')+':'+o.getMinutes().toString().padStart(2,'0');
+  document.getElementById('edit-pauza').value=getPauzaMin(z);
   document.getElementById('edit-modal').classList.add('open');
 }
 function closeEdit(){document.getElementById('edit-modal').classList.remove('open');editId=null;}
@@ -329,6 +379,10 @@ function saveEdit(){
   oDate.setHours(parseInt(oh[0]),parseInt(oh[1]),0);
   z.prichod=pDate.toISOString();
   z.odchod=oDate.toISOString();
+  const pauzaMin=parseInt(document.getElementById('edit-pauza').value)||0;
+  const pauzaStart=new Date(pDate.getTime()+Math.round((oDate-pDate)/2));
+  const pauzaEnd=new Date(pauzaStart.getTime()+pauzaMin*60000);
+  z.pauzy=pauzaMin>0?[{start:pauzaStart.toISOString(),end:pauzaEnd.toISOString()}]:[];
   save();closeEdit();renderPrehled();
 }
 
@@ -339,7 +393,7 @@ function renderFaktura(){
   const el=document.getElementById('faktura-obsah');
   const radky=z.length===0?'<tr><td colspan="5" style="text-align:center;color:#444;padding:20px">Zadne zaznamy</td></tr>':
     z.map(function(zz){const h=calcNet(zz)/3600000;return'<tr><td>'+(data.popis||'Svarecske prace')+'</td><td class="r" style="color:#666">'+fmtDate(zz.prichod)+'</td><td class="r">'+h.toFixed(2)+'</td><td class="r" style="color:#666">'+data.sazba+'</td><td class="r" style="color:var(--green)">'+Math.round(h*data.sazba).toLocaleString('cs-CZ')+'</td></tr>';}).join('');
-  el.innerHTML='<div class="fakt-header"><div><div class="fakt-title">FAKTURA</div><div style="font-size:10px;color:#555;margin-top:4px">DATUM: '+new Date().toLocaleDateString('cs-CZ')+'</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:bold">'+(data.jmeno||'Vase jmeno')+'</div><div style="font-size:11px;color:#666">ICO: '+(data.ico||'-')+'</div></div></div>'+(data.odberatel?'<div style="margin-bottom:18px"><div style="font-size:8px;color:#555;letter-spacing:2px;margin-bottom:6px">ODBERATEL</div><div style="white-space:pre-line;font-size:12px;color:#aaa">'+data.odberatel+'</div></div>':'')+'<table class="fakt-table"><thead><tr><th>POPIS</th><th class="r">DATUM</th><th class="r">H</th><th class="r">KC/H</th><th class="r">CASTKA</th></tr></thead><tbody>'+radky+'</tbody></table><div class="fakt-celkem"><div class="fakt-celkem-box"><div class="fakt-celkem-label">CELKEM K UGRADE</div><div class="fakt-celkem-value">'+celkKc.toLocaleString('cs-CZ')+' Kc</div><div class="fakt-celkem-sub">'+celkH.toFixed(2)+' h x '+data.sazba+' Kc/h</div></div></div>';
+  el.innerHTML='<div class="fakt-header"><div><div class="fakt-title">FAKTURA</div><div style="font-size:10px;color:#555;margin-top:4px">DATUM: '+new Date().toLocaleDateString('cs-CZ')+'</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:bold">'+(data.jmeno||'Vase jmeno')+'</div><div style="font-size:11px;color:#666">ICO: '+(data.ico||'-')+'</div></div></div>'+(data.odberatel?'<div style="margin-bottom:18px"><div style="font-size:8px;color:#555;letter-spacing:2px;margin-bottom:6px">ODBERATEL</div><div style="white-space:pre-line;font-size:12px;color:#aaa">'+data.odberatel+'</div></div>':'')+'<table class="fakt-table"><thead><tr><th>POPIS</th><th class="r">DATUM</th><th class="r">H</th><th class="r">KC/H</th><th class="r">CASTKA</th></tr></thead><tbody>'+radky+'</tbody></table><div class="fakt-celkem"><div class="fakt-celkem-box"><div class="fakt-celkem-label">CELKEM K UHRADE</div><div class="fakt-celkem-value">'+celkKc.toLocaleString('cs-CZ')+' Kc</div><div class="fakt-celkem-sub">'+celkH.toFixed(2)+' h x '+data.sazba+' Kc/h</div></div></div>';
 }
 
 function renderNastaveni(){
@@ -362,7 +416,6 @@ function updateSazbaPreview(){
   const celkH=data.zaznamy.reduce((s,z)=>s+calcNet(z),0)/3600000;
   document.getElementById('sazba-preview').textContent=celkH>0?'Pri '+celkH.toFixed(1)+' h = '+Math.round(celkH*data.sazba).toLocaleString('cs-CZ')+' Kc':'';
 }
-
 function exportData(){
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
@@ -379,7 +432,6 @@ function smazatVse(){
   data={zaznamy:[],aktualniDen:null,sazba:450,jmeno:'',ico:'',odberatel:'',popis:'Svarecske prace'};
   save();renderDnes();renderNastaveni();
 }
-
 function openFeedback(){
   selectedStar=0;
   document.querySelectorAll('.star').forEach(s=>s.classList.remove('active'));
@@ -403,7 +455,6 @@ function sendFeedback(){
   document.getElementById('sent-msg').style.display='block';
   setTimeout(closeFeedback,2500);
 }
-
 load();renderDnes();renderNastaveni();
 setInterval(function(){
   if(data.aktualniDen&&!data.aktualniDen.odchod){
