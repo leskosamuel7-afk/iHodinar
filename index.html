@@ -45,7 +45,6 @@ body{font-family:'Courier New',Courier,monospace;background:#0a0a0a;color:#e8e8e
 .status-label.prace{color:var(--green)}
 .status-label.pauza{color:var(--yellow)}
 .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
-.stats2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px}
 .stat{background:var(--bg3);border-radius:10px;padding:12px 10px}
 .stat-label{font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:6px}
 .stat-value{font-size:18px;color:var(--text);font-weight:bold}
@@ -72,7 +71,15 @@ textarea{resize:vertical;min-height:80px}
 .zaznam-kc{font-size:12px;color:var(--green)}
 .smazat{background:none;border:none;color:#333;font-size:20px;cursor:pointer;padding:2px 6px;line-height:1}
 .smazat:active{color:var(--red)}
-.tyden-header{font-size:11px;color:var(--orange);letter-spacing:2px;padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;font-weight:bold}
+.mesic-header{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:border-color .2s}
+.mesic-header:active{opacity:.8}
+.mesic-header.otevreny{border-color:var(--orange)}
+.mesic-nazev{font-size:15px;font-weight:bold;color:var(--orange)}
+.mesic-stats{font-size:11px;color:#666;margin-top:3px}
+.mesic-arrow{font-size:16px;color:var(--muted);transition:transform .2s}
+.mesic-header.otevreny .mesic-arrow{transform:rotate(90deg);color:var(--orange)}
+.mesic-obsah{display:none;margin-bottom:8px}
+.mesic-obsah.otevreny{display:block}
 .celkem-bar{background:var(--bg2);border:1px solid var(--orange);border-radius:12px;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:16px}
 .celkem-label{font-size:9px;color:#666;letter-spacing:2px;margin-bottom:2px}
 .celkem-sub{font-size:10px;color:#444}
@@ -113,7 +120,7 @@ textarea{resize:vertical;min-height:80px}
 <body>
   <div class="app-header no-print">
 <div><div style="display:flex;align-items:baseline"><span class="logo-i">i</span><span class="logo-rest">Hodin&#225;&#345;<span class="logo-dot">.</span>app</span></div><div class="logo-sub">Docházka a faktury pro OSVČ</div></div>
-<div class="version-badge">v1.2</div>
+<div class="version-badge">v1.3</div>
 </div>
 <div class="page active" id="page-dnes">
 <div class="page-top"><div class="page-label">Dnešní datum</div><div class="page-title" id="datum-dnes"></div></div>
@@ -178,7 +185,7 @@ textarea{resize:vertical;min-height:80px}
 <div class="divider"></div>
 <button class="btn btn-secondary" style="color:var(--red);border-color:#3a1a1a" onclick="smazatVse()">&#128465; Smazat všechna data</button>
 </div>
-<div style="text-align:center;font-size:10px;color:#2a2a2a;padding:10px 0 20px;letter-spacing:2px">iHodinář.app v1.2</div>
+<div style="text-align:center;font-size:10px;color:#2a2a2a;padding:10px 0 20px;letter-spacing:2px">iHodinář.app v1.3</div>
 </div>
 <div class="modal-overlay" id="pridat-modal" onclick="if(event.target===this)closePridat()">
 <div class="modal" style="position:relative">
@@ -234,13 +241,13 @@ textarea{resize:vertical;min-height:80px}
 <button class="nav-btn" onclick="showPage('prehled',this)"><span class="icon">&#128203;</span>Přehled</button>
 <button class="nav-btn" onclick="showPage('faktura',this)"><span class="icon">&#129534;</span>Faktura</button>
 <button class="nav-btn" onclick="showPage('nastaveni',this)"><span class="icon">&#9881;</span>Profil</button>
-</nav>
-<script>
+    <script>
 const KEY='ihodinar_v1';
 const FEEDBACK_EMAIL='leskosamuel7@gmail.com';
 let data={zaznamy:[],aktualniDen:null,sazba:450,jmeno:'',ico:'',odberatel:'',popis:'Svářečské práce'};
 let selectedStar=0;
 let editId=null;
+let otevrenyMesice={};
 
 function load(){try{const r=localStorage.getItem(KEY);if(r)data=Object.assign(data,JSON.parse(r));}catch(e){}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));}
@@ -249,6 +256,7 @@ function fmt(ms){if(!ms||ms<0)return'0h 0m';const m=Math.floor(ms/60000),h=Math.
 function fmtKc(kc){return Math.round(kc).toLocaleString('cs-CZ')+' Kč';}
 function fmtTime(iso){if(!iso)return'-';return new Date(iso).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});}
 function fmtDate(iso){if(!iso)return'';return new Date(iso).toLocaleDateString('cs-CZ',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function fmtMesic(rok,mesic){const d=new Date(rok,mesic,1);return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});}
 function calcNet(z){
   if(!z||!z.prichod||!z.odchod)return 0;
   const total=new Date(z.odchod)-new Date(z.prichod);
@@ -367,6 +375,11 @@ function renderDnes(){
   }else{pl.style.display='none';}
 }
 
+function toggleMesic(klic){
+  otevrenyMesice[klic]=!otevrenyMesice[klic];
+  renderPrehled();
+}
+
 function renderPrehled(){
   const z=data.zaznamy;
   document.getElementById('prehled-pocet').textContent=z.length+' dní';
@@ -377,34 +390,45 @@ function renderPrehled(){
     el.innerHTML='<div class="empty"><span class="empty-icon">📋</span>Zatím tu nemáš žádné záznamy.<br><span style="color:#2a2a2a">Začni na záložce Dnes.</span></div>';
     return;
   }
-  const tydenMs=getStartOfWeek().getTime();
-  const sorted=z.slice().reverse();
-  let html='';
-  let lastTyden='';
-  sorted.forEach(function(z){
-    const d=new Date(z.prichod);
-    const tydenStart=new Date(d);
-    const day=tydenStart.getDay();
-    const diff=tydenStart.getDate()-(day===0?6:day-1);
-    tydenStart.setDate(diff);tydenStart.setHours(0,0,0,0);
-    const tydenKey=tydenStart.toISOString();
-    if(tydenKey!==lastTyden){
-      lastTyden=tydenKey;
-      const tydenH=sorted.filter(function(zz){
-        const dd=new Date(zz.prichod);
-        const ts=new Date(dd);const dy=ts.getDay();
-        const df=ts.getDate()-(dy===0?6:dy-1);ts.setDate(df);ts.setHours(0,0,0,0);
-        return ts.toISOString()===tydenKey;
-      }).reduce(function(s,zz){return s+calcNet(zz);},0)/3600000;
-      const tydenKc=Math.round(tydenH*data.sazba);
-      const tydenLabel=tydenStart.toLocaleDateString('cs-CZ',{day:'2-digit',month:'2-digit'});
-      html+='<div class="tyden-header">Týden od '+tydenLabel+' &nbsp;·&nbsp; '+tydenH.toFixed(1)+' h &nbsp;·&nbsp; '+fmtKc(tydenKc)+'</div>';
-    }
-    const h=calcNet(z)/3600000;
-    const kc=Math.round(h*data.sazba);
-    const pm=getPauzaMin(z);
-    html+='<div class="zaznam"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="zaznam-datum">'+fmtDate(z.prichod)+'</div><button class="btn btn-secondary" style="padding:4px 12px;font-size:11px;width:auto;margin:0" onclick="openEdit('+z.id+')">Upravit</button></div><div class="zaznam-row"><div class="zaznam-info"><span>'+fmtTime(z.prichod)+'</span><span>'+fmtTime(z.odchod)+'</span><span style="color:var(--yellow)">pauza '+pm+' min</span></div><div class="zaznam-right"><div class="zaznam-hodiny">'+h.toFixed(2)+' h</div><div class="zaznam-kc">'+fmtKc(kc)+'</div><button class="smazat" onclick="smazatZaznam('+z.id+')">×</button></div></div></div>';
+
+  // Seskupit po mesicich
+  const mesice={};
+  z.slice().reverse().forEach(function(zz){
+    const d=new Date(zz.prichod);
+    const klic=d.getFullYear()+'-'+(d.getMonth());
+    if(!mesice[klic]){mesice[klic]={rok:d.getFullYear(),mesic:d.getMonth(),zaznamy:[]};}
+    mesice[klic].zaznamy.push(zz);
   });
+
+  // Nejnovejsi mesic automaticky otevreny
+  const klice=Object.keys(mesice);
+  if(klice.length>0&&otevrenyMesice[klice[0]]===undefined){
+    otevrenyMesice[klice[0]]=true;
+  }
+
+  let html='';
+  klice.forEach(function(klic){
+    const m=mesice[klic];
+    const mesicH=m.zaznamy.reduce(function(s,zz){return s+calcNet(zz);},0)/3600000;
+    const mesicKc=Math.round(mesicH*data.sazba);
+    const jeOtevreny=!!otevrenyMesice[klic];
+    const nazev=fmtMesic(m.rok,m.mesic);
+
+    html+='<div class="mesic-header '+(jeOtevreny?'otevreny':'')+'" onclick="toggleMesic(\''+klic+'\')">';
+    html+='<div><div class="mesic-nazev">'+nazev.charAt(0).toUpperCase()+nazev.slice(1)+'</div>';
+    html+='<div class="mesic-stats">'+mesicH.toFixed(1)+' h &nbsp;·&nbsp; '+fmtKc(mesicKc)+'</div></div>';
+    html+='<div class="mesic-arrow">&#9654;</div></div>';
+
+    html+='<div class="mesic-obsah '+(jeOtevreny?'otevreny':'')+'">';
+    m.zaznamy.forEach(function(zz){
+      const h=calcNet(zz)/3600000;
+      const kc=Math.round(h*data.sazba);
+      const pm=getPauzaMin(zz);
+      html+='<div class="zaznam"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="zaznam-datum">'+fmtDate(zz.prichod)+'</div><button class="btn btn-secondary" style="padding:4px 12px;font-size:11px;width:auto;margin:0" onclick="openEdit('+zz.id+')">Upravit</button></div><div class="zaznam-row"><div class="zaznam-info"><span>'+fmtTime(zz.prichod)+'</span><span>'+fmtTime(zz.odchod)+'</span><span style="color:var(--yellow)">pauza '+pm+' min</span></div><div class="zaznam-right"><div class="zaznam-hodiny">'+h.toFixed(2)+' h</div><div class="zaznam-kc">'+fmtKc(kc)+'</div><button class="smazat" onclick="smazatZaznam('+zz.id+')">×</button></div></div></div>';
+    });
+    html+='</div>';
+  });
+
   const celkKc=Math.round(celkH*data.sazba);
   html+='<div class="celkem-bar"><div><div class="celkem-label">Celková částka</div><div class="celkem-sub">'+celkH.toFixed(2)+' h × '+data.sazba+' Kč/h</div></div><div class="celkem-value">'+fmtKc(celkKc)+'</div></div>';
   el.innerHTML=html;
@@ -552,4 +576,4 @@ setInterval(function(){
 },30000);
 </script>
 </body>
-</html>
+</html>                                                                                                                                                  </nav>
