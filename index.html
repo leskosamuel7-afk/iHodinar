@@ -59,11 +59,12 @@ body{font-family:'Courier New',Courier,monospace;background:#0a0a0a;color:#e8e8e
 .vydel-sub-label{font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:4px}
 .vydel-sub-val{font-size:15px;font-weight:bold;color:var(--orange)}
 input,textarea,select{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Courier New',Courier,monospace;padding:13px 14px;font-size:14px;width:100%;outline:none;border-radius:10px;margin-bottom:12px;-webkit-appearance:none}
-input:focus,textarea:focus{border-color:var(--orange)}
+input:focus,textarea:focus,select:focus{border-color:var(--orange)}
 label{font-size:9px;color:#666;display:block;margin-bottom:6px;letter-spacing:1px;text-transform:uppercase}
-textarea{resize:vertical;min-height:80px}
+textarea{resize:vertical;min-height:60px}
 .zaznam{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px}
 .zaznam-datum{font-size:15px;color:var(--orange);margin-bottom:8px;font-weight:bold}
+.zaznam-popis{font-size:12px;color:#888;margin-top:6px;font-style:italic;line-height:1.4}
 .zaznam-row{display:flex;justify-content:space-between;align-items:center}
 .zaznam-info{font-size:11px;color:#555;display:flex;gap:12px;flex-wrap:wrap}
 .zaznam-right{text-align:right;flex-shrink:0;margin-left:10px}
@@ -118,9 +119,9 @@ textarea{resize:vertical;min-height:80px}
 </style>
 </head>
 <body>
-  <div class="app-header no-print">
+  
 <div><div style="display:flex;align-items:baseline"><span class="logo-i">i</span><span class="logo-rest">Hodin&#225;&#345;<span class="logo-dot">.</span>app</span></div><div class="logo-sub">Docházka a faktury pro OSVČ</div></div>
-<div class="version-badge">v1.3</div>
+<div class="version-badge">v1.4</div>
 </div>
 <div class="page active" id="page-dnes">
 <div class="page-top"><div class="page-label">Dnešní datum</div><div class="page-title" id="datum-dnes"></div></div>
@@ -142,7 +143,12 @@ textarea{resize:vertical;min-height:80px}
 </div>
 </div>
 </div>
-<div id="btn-area"><div style="text-align:center;padding:16px 0 6px"><div style="font-size:12px;color:#3a3a3a;margin-bottom:18px">Začni zaznamenávat pracovní dobu</div><button class="btn btn-start" onclick="prichod()">&#9654; Příchod</button></div></div>
+<div id="btn-area"><div style="text-align:center;padding:16px 0 6px"><div style="font-size:12px;color:#3a3a3a;margin-bottom:12px">Začni zaznamenávat pracovní dobu</div>
+<label style="text-align:left;display:block;margin-bottom:6px">Klient</label>
+<select id="prichod-klient" style="margin-bottom:12px"><option value="">— Bez klienta —</option></select>
+<label style="text-align:left;display:block;margin-bottom:6px">Popis práce (nepovinné)</label>
+<textarea id="prichod-popis" placeholder="Montáž ocelové konstrukce..." style="margin-bottom:16px;min-height:60px"></textarea>
+<button class="btn btn-start" onclick="prichod()">&#9654; Příchod</button></div></div>
 </div>
 <div class="card" id="pauzy-list" style="display:none"><div class="card-title">Dnešní pauzy</div><div id="pauzy-items"></div></div>
 </div>
@@ -158,12 +164,31 @@ textarea{resize:vertical;min-height:80px}
 <div class="page" id="page-faktura">
 <div class="page-top no-print"><div class="page-label">Výpočet faktury</div><div class="page-title">Faktura</div></div>
 <div style="height:14px" class="no-print"></div>
+<div class="card no-print" style="margin-bottom:14px">
+<div class="card-title">Nastavení faktury</div>
+<div class="row2">
+<div><label>Číslo faktury</label><input type="text" id="faktura-cislo" placeholder="2026-001" oninput="renderFaktura()"></div>
+<div><label>Datum vystavení</label><input type="date" id="faktura-datum" oninput="renderFaktura()"></div>
+</div>
+<div class="row2">
+<div><label>Splatnost (dní)</label><input type="number" id="faktura-splatnost" value="14" min="1" oninput="renderFaktura()"></div>
+<div><label>Filtr klienta</label><select id="faktura-klient-filter" onchange="renderFaktura()"><option value="">— Všichni —</option></select></div>
+</div>
+</div>
 <button class="btn btn-print no-print" onclick="window.print()">&#128424; Uložit jako PDF</button>
 <div id="faktura-obsah"></div>
 </div>
 <div class="page" id="page-nastaveni">
 <div class="page-top"><div class="page-label">Nastavení</div><div class="page-title">Profil</div></div>
 <div style="height:16px"></div>
+<div class="card"><div class="card-title">Klienti</div>
+<div id="klienti-list" style="margin-bottom:12px"></div>
+<div class="row2">
+<div><label>Název klienta</label><input type="text" id="novy-klient-nazev" placeholder="Promont"></div>
+<div><label>Sazba Kč/h</label><input type="number" id="novy-klient-sazba" placeholder="450"></div>
+</div>
+<button class="btn btn-orange" style="font-size:13px;padding:12px" onclick="pridatKlienta()">+ Přidat klienta</button>
+</div>
 <div class="card"><div class="card-title">Fakturační údaje</div>
 <label>Vaše jméno / firma</label><input type="text" id="set-jmeno" placeholder="Jan Novák" oninput="saveSettings()">
 <label>IČO</label><input type="text" id="set-ico" placeholder="12345678" oninput="saveSettings()">
@@ -185,7 +210,7 @@ textarea{resize:vertical;min-height:80px}
 <div class="divider"></div>
 <button class="btn btn-secondary" style="color:var(--red);border-color:#3a1a1a" onclick="smazatVse()">&#128465; Smazat všechna data</button>
 </div>
-<div style="text-align:center;font-size:10px;color:#2a2a2a;padding:10px 0 20px;letter-spacing:2px">iHodinář.app v1.3</div>
+<div style="text-align:center;font-size:10px;color:#2a2a2a;padding:10px 0 20px;letter-spacing:2px">iHodinář.app v1.4</div>
 </div>
 <div class="modal-overlay" id="pridat-modal" onclick="if(event.target===this)closePridat()">
 <div class="modal" style="position:relative">
@@ -197,19 +222,25 @@ textarea{resize:vertical;min-height:80px}
 <div><label>Příchod</label><input type="time" id="pridat-prichod"></div>
 <div><label>Odchod</label><input type="time" id="pridat-odchod"></div>
 </div>
-<label>Pauza (minuty)</label><input type="number" id="pridat-pauza" placeholder="0" min="0" style="margin-bottom:20px">
+<label>Pauza (minuty)</label><input type="number" id="pridat-pauza" placeholder="0" min="0">
+<label>Klient</label><select id="pridat-klient" style="margin-bottom:12px"><option value="">— Bez klienta —</option></select>
+<label>Popis práce (nepovinné)</label>
+<textarea id="pridat-popis" placeholder="Montáž ocelové konstrukce..." style="margin-bottom:20px;min-height:60px"></textarea>
 <button class="btn btn-start" style="font-size:14px;padding:16px" onclick="savePridat()">Uložit směnu</button>
 </div></div>
 <div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)closeEdit()">
 <div class="modal" style="position:relative">
 <button class="modal-close" onclick="closeEdit()">×</button>
 <div class="modal-title">Upravit směnu</div>
-<div class="modal-sub" id="edit-datum"></div>
+<div class="modal-sub" id="edit-datum-label"></div>
 <div class="row2">
 <div><label>Příchod</label><input type="time" id="edit-prichod"></div>
 <div><label>Odchod</label><input type="time" id="edit-odchod"></div>
 </div>
-<label>Pauza (minuty)</label><input type="number" id="edit-pauza" placeholder="0" min="0" style="margin-bottom:20px">
+<label>Pauza (minuty)</label><input type="number" id="edit-pauza" placeholder="0" min="0">
+<label>Klient</label><select id="edit-klient" style="margin-bottom:12px"><option value="">— Bez klienta —</option></select>
+<label>Popis práce (nepovinné)</label>
+<textarea id="edit-popis" placeholder="Montáž ocelové konstrukce..." style="margin-bottom:20px;min-height:60px"></textarea>
 <button class="btn btn-start" style="font-size:14px;padding:16px" onclick="saveEdit()">Uložit změny</button>
 </div></div>
 <div class="modal-overlay" id="feedback-modal" onclick="if(event.target===this)closeFeedback()">
@@ -226,7 +257,6 @@ textarea{resize:vertical;min-height:80px}
 <button class="chip" onclick="toggleChip(this)">Sync mezi zařízeními</button>
 <button class="chip" onclick="toggleChip(this)">Více jazyků</button>
 <button class="chip" onclick="toggleChip(this)">Připomínky</button>
-<button class="chip" onclick="toggleChip(this)">Více klientů</button>
 <button class="chip" onclick="toggleChip(this)">Kilometry</button>
 <button class="chip" onclick="toggleChip(this)">Jiné</button>
 </div>
@@ -241,39 +271,49 @@ textarea{resize:vertical;min-height:80px}
 <button class="nav-btn" onclick="showPage('prehled',this)"><span class="icon">&#128203;</span>Přehled</button>
 <button class="nav-btn" onclick="showPage('faktura',this)"><span class="icon">&#129534;</span>Faktura</button>
 <button class="nav-btn" onclick="showPage('nastaveni',this)"><span class="icon">&#9881;</span>Profil</button>
-    <script>
+</nav>
+<script>
 const KEY='ihodinar_v1';
 const FEEDBACK_EMAIL='leskosamuel7@gmail.com';
-let data={zaznamy:[],aktualniDen:null,sazba:450,jmeno:'',ico:'',odberatel:'',popis:'Svářečské práce'};
+let data={zaznamy:[],klienti:[],aktualniDen:null,sazba:450,jmeno:'',ico:'',odberatel:'',popis:'Svářečské práce'};
 let selectedStar=0;
 let editId=null;
 let otevrenyMesice={};
 
 function load(){try{const r=localStorage.getItem(KEY);if(r)data=Object.assign(data,JSON.parse(r));}catch(e){}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));}
-
+function esc(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmt(ms){if(!ms||ms<0)return'0h 0m';const m=Math.floor(ms/60000),h=Math.floor(m/60);return h+'h '+(m%60)+'m';}
 function fmtKc(kc){return Math.round(kc).toLocaleString('cs-CZ')+' Kč';}
 function fmtTime(iso){if(!iso)return'-';return new Date(iso).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});}
 function fmtDate(iso){if(!iso)return'';return new Date(iso).toLocaleDateString('cs-CZ',{day:'2-digit',month:'2-digit',year:'numeric'});}
 function fmtMesic(rok,mesic){const d=new Date(rok,mesic,1);return d.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});}
+function getNextFakturaNum(){const rok=new Date().getFullYear();const klic='fakturaNum_'+rok;const n=(parseInt(localStorage.getItem(klic))||0)+1;localStorage.setItem(klic,n);return rok+'-'+String(n).padStart(3,'0');}
+
 function calcNet(z){
   if(!z||!z.prichod||!z.odchod)return 0;
   const total=new Date(z.odchod)-new Date(z.prichod);
   const pauza=(z.pauzy||[]).reduce((s,p)=>p.start&&p.end?s+(new Date(p.end)-new Date(p.start)):s,0);
+  const totalHodiny=total/3600000;
+  if(totalHodiny<=7.5)return Math.max(0,total);
   return Math.max(0,total-pauza);
 }
-function getPauzaMin(z){
-  return Math.round((z.pauzy||[]).reduce((s,p)=>p.start&&p.end?s+(new Date(p.end)-new Date(p.start)):s,0)/60000);
+function getPauzaMin(z){return Math.round((z.pauzy||[]).reduce((s,p)=>p.start&&p.end?s+(new Date(p.end)-new Date(p.start)):s,0)/60000);}
+function getKlienti(){return data.klienti||[];}
+function getSazbaProKlienta(klientId){if(!klientId)return data.sazba;const k=getKlienti().find(k=>k.id===klientId);return k?k.sazba:data.sazba;}
+function getStartOfWeek(){const d=new Date();d.setHours(0,0,0,0);const day=d.getDay();const diff=d.getDate()-(day===0?6:day-1);d.setDate(diff);return d;}
+function getStartOfMonth(){const d=new Date();d.setHours(0,0,0,0);d.setDate(1);return d;}
+
+function validateRecord(prichod,odchod,pauzaMin){
+  if(!prichod||!odchod)return'Vyplň všechna pole!';
+  if(isNaN(prichod.getTime()))return'Neplatný čas příchodu.';
+  if(isNaN(odchod.getTime()))return'Neplatný čas odchodu.';
+  if(odchod<=prichod)return'Odchod musí být po příchodu!';
+  if(pauzaMin<0)return'Pauza nemůže být záporná.';
+  if((odchod-prichod)/60000<=pauzaMin)return'Pauza je delší než směna!';
+  return null;
 }
-function getStartOfWeek(){
-  const d=new Date();d.setHours(0,0,0,0);
-  const day=d.getDay();const diff=d.getDate()-(day===0?6:day-1);
-  d.setDate(diff);return d;
-}
-function getStartOfMonth(){
-  const d=new Date();d.setHours(0,0,0,0);d.setDate(1);return d;
-}
+
 function calcVydelek(){
   const now=new Date();
   const sowMs=getStartOfWeek().getTime();
@@ -285,12 +325,44 @@ function calcVydelek(){
   data.zaznamy.forEach(function(z){
     const h=calcNet(z)/3600000;
     const d=new Date(z.prichod);
-    const isToday=d.toDateString()===now.toDateString();
-    if(isToday)dnesH+=h;
+    if(d.toDateString()===now.toDateString())dnesH+=h;
     if(d.getTime()>=sowMs)tydenH+=h;
     if(d.getTime()>=somMs)mesicH+=h;
   });
   return{dnes:dnesH*data.sazba,tyden:tydenH*data.sazba,mesic:mesicH*data.sazba};
+}
+
+function naplnitSelectKlienty(selectId,vybranId){
+  const sel=document.getElementById(selectId);
+  if(!sel)return;
+  const klienti=getKlienti();
+  sel.innerHTML='<option value="">— Bez klienta —</option>'+klienti.map(k=>'<option value="'+k.id+'"'+(k.id===vybranId?' selected':'')+'>'+esc(k.nazev)+' ('+k.sazba+' Kč/h)</option>').join('');
+}
+
+function renderKlientiList(){
+  const el=document.getElementById('klienti-list');
+  if(!el)return;
+  const klienti=getKlienti();
+  if(klienti.length===0){el.innerHTML='<div style="font-size:12px;color:#444;margin-bottom:8px">Zatím žádní klienti.</div>';return;}
+  el.innerHTML=klienti.map(k=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1a1a"><div><div style="font-size:13px;font-weight:bold">'+esc(k.nazev)+'</div><div style="font-size:11px;color:#666">'+k.sazba+' Kč/h</div></div><button onclick="smazatKlienta(\''+k.id+'\')" style="background:none;border:none;color:#444;font-size:18px;cursor:pointer">×</button></div>').join('');
+}
+
+function pridatKlienta(){
+  const nazev=document.getElementById('novy-klient-nazev').value.trim();
+  const sazba=parseInt(document.getElementById('novy-klient-sazba').value)||0;
+  if(!nazev){alert('Zadej název klienta.');return;}
+  if(sazba<=0){alert('Zadej platnou sazbu.');return;}
+  if(!data.klienti)data.klienti=[];
+  data.klienti.push({id:'k'+Date.now(),nazev,sazba});
+  document.getElementById('novy-klient-nazev').value='';
+  document.getElementById('novy-klient-sazba').value='';
+  save();renderKlientiList();
+}
+
+function smazatKlienta(id){
+  if(!confirm('Smazat klienta?'))return;
+  data.klienti=(data.klienti||[]).filter(k=>k.id!==id);
+  save();renderKlientiList();
 }
 
 function showPage(name,btn){
@@ -300,13 +372,16 @@ function showPage(name,btn){
   btn.classList.add('active');
   if(name==='prehled')renderPrehled();
   if(name==='faktura')renderFaktura();
-  if(name==='nastaveni')renderNastaveni();
+  if(name==='nastaveni'){renderNastaveni();renderKlientiList();}
 }
 
 function prichod(){
-  data.aktualniDen={id:Date.now(),prichod:new Date().toISOString(),odchod:null,pauzy:[],aktivniPauza:null};
+  const klientId=document.getElementById('prichod-klient')?.value||'';
+  const popis=document.getElementById('prichod-popis')?.value.trim()||'';
+  data.aktualniDen={id:Date.now(),prichod:new Date().toISOString(),odchod:null,pauzy:[],aktivniPauza:null,klientId,popis};
   save();renderDnes();
 }
+
 function odchod(){
   if(!data.aktualniDen)return;
   let d=data.aktualniDen;
@@ -316,11 +391,13 @@ function odchod(){
   data.aktualniDen=null;
   save();renderDnes();
 }
+
 function zacatekPauzy(){
   if(!data.aktualniDen||data.aktualniDen.aktivniPauza)return;
   data.aktualniDen.aktivniPauza=new Date().toISOString();
   save();renderDnes();
 }
+
 function konecPauzy(){
   if(!data.aktualniDen||!data.aktualniDen.aktivniPauza)return;
   data.aktualniDen.pauzy.push({start:data.aktualniDen.aktivniPauza,end:new Date().toISOString()});
@@ -351,7 +428,9 @@ function renderDnes(){
   if(!d){
     dot.className='dot';lbl.className='status-label';lbl.textContent='Mimo pracovní dobu';
     stats.style.display='none';pl.style.display='none';vydelBox.style.display='none';
-    btns.innerHTML='<div style="text-align:center;padding:16px 0 6px"><div style="font-size:12px;color:#3a3a3a;margin-bottom:18px">Začni zaznamenávat pracovní dobu</div><button class="btn btn-start" onclick="prichod()">&#9654; Příchod</button></div>';
+    naplnitSelectKlienty('prichod-klient','');
+    btns.innerHTML='<div style="text-align:center;padding:16px 0 6px"><div style="font-size:12px;color:#3a3a3a;margin-bottom:12px">Začni zaznamenávat pracovní dobu</div><label style="text-align:left;display:block;margin-bottom:6px">Klient</label><select id="prichod-klient" style="margin-bottom:12px"><option value="">— Bez klienta —</option></select><label style="text-align:left;display:block;margin-bottom:6px">Popis práce (nepovinné)</label><textarea id="prichod-popis" placeholder="Montáž ocelové konstrukce..." style="margin-bottom:16px;min-height:60px"></textarea><button class="btn btn-start" onclick="prichod()">&#9654; Příchod</button></div>';
+    naplnitSelectKlienty('prichod-klient','');
     return;
   }
   const jePauza=!!d.aktivniPauza;
@@ -368,6 +447,7 @@ function renderDnes(){
   if(!jePauza){btns.innerHTML+='<button class="btn btn-pause" onclick="zacatekPauzy()">&#9646;&#9646; Pauza</button>';}
   else{btns.innerHTML+='<button class="btn btn-resume" onclick="konecPauzy()">&#9654; Pokračovat</button>';}
   btns.innerHTML+='<button class="btn btn-stop" onclick="odchod()">&#9632; Odchod</button>';
+  if(d.popis){btns.innerHTML+='<div style="font-size:12px;color:#666;margin-top:8px;font-style:italic">'+esc(d.popis)+'</div>';}
   const pauzy=d.pauzy||[];
   if(pauzy.length>0){
     pl.style.display='block';
@@ -386,12 +466,7 @@ function renderPrehled(){
   const celkH=z.reduce((s,z)=>s+calcNet(z),0)/3600000;
   document.getElementById('prehled-hodiny').textContent=celkH.toFixed(2)+' h';
   const el=document.getElementById('zaznamy-list');
-  if(z.length===0){
-    el.innerHTML='<div class="empty"><span class="empty-icon">📋</span>Zatím tu nemáš žádné záznamy.<br><span style="color:#2a2a2a">Začni na záložce Dnes.</span></div>';
-    return;
-  }
-
-  // Seskupit po mesicich
+  if(z.length===0){el.innerHTML='<div class="empty"><span class="empty-icon">📋</span>Zatím tu nemáš žádné záznamy.<br><span style="color:#2a2a2a">Začni na záložce Dnes.</span></div>';return;}
   const mesice={};
   z.slice().reverse().forEach(function(zz){
     const d=new Date(zz.prichod);
@@ -399,38 +474,53 @@ function renderPrehled(){
     if(!mesice[klic]){mesice[klic]={rok:d.getFullYear(),mesic:d.getMonth(),zaznamy:[]};}
     mesice[klic].zaznamy.push(zz);
   });
-
-  // Nejnovejsi mesic automaticky otevreny
   const klice=Object.keys(mesice);
-  if(klice.length>0&&otevrenyMesice[klice[0]]===undefined){
-    otevrenyMesice[klice[0]]=true;
-  }
-
+  if(klice.length>0&&otevrenyMesice[klice[0]]===undefined){otevrenyMesice[klice[0]]=true;}
   let html='';
   klice.forEach(function(klic){
     const m=mesice[klic];
     const mesicH=m.zaznamy.reduce(function(s,zz){return s+calcNet(zz);},0)/3600000;
-    const mesicKc=Math.round(mesicH*data.sazba);
+    const mesicKc=m.zaznamy.reduce(function(s,zz){return s+calcNet(zz)/3600000*getSazbaProKlienta(zz.klientId);},0);
     const jeOtevreny=!!otevrenyMesice[klic];
     const nazev=fmtMesic(m.rok,m.mesic);
-
     html+='<div class="mesic-header '+(jeOtevreny?'otevreny':'')+'" onclick="toggleMesic(\''+klic+'\')">';
-    html+='<div><div class="mesic-nazev">'+nazev.charAt(0).toUpperCase()+nazev.slice(1)+'</div>';
+    html+='<div><div class="mesic-nazev">'+esc(nazev.charAt(0).toUpperCase()+nazev.slice(1))+'</div>';
     html+='<div class="mesic-stats">'+mesicH.toFixed(1)+' h &nbsp;·&nbsp; '+fmtKc(mesicKc)+'</div></div>';
     html+='<div class="mesic-arrow">&#9654;</div></div>';
-
     html+='<div class="mesic-obsah '+(jeOtevreny?'otevreny':'')+'">';
     m.zaznamy.forEach(function(zz){
       const h=calcNet(zz)/3600000;
-      const kc=Math.round(h*data.sazba);
+      const sazba=getSazbaProKlienta(zz.klientId);
+      const kc=Math.round(h*sazba);
       const pm=getPauzaMin(zz);
-      html+='<div class="zaznam"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="zaznam-datum">'+fmtDate(zz.prichod)+'</div><button class="btn btn-secondary" style="padding:4px 12px;font-size:11px;width:auto;margin:0" onclick="openEdit('+zz.id+')">Upravit</button></div><div class="zaznam-row"><div class="zaznam-info"><span>'+fmtTime(zz.prichod)+'</span><span>'+fmtTime(zz.odchod)+'</span><span style="color:var(--yellow)">pauza '+pm+' min</span></div><div class="zaznam-right"><div class="zaznam-hodiny">'+h.toFixed(2)+' h</div><div class="zaznam-kc">'+fmtKc(kc)+'</div><button class="smazat" onclick="smazatZaznam('+zz.id+')">×</button></div></div></div>';
+      const kNazev=zz.klientId?(getKlienti().find(k=>k.id===zz.klientId)?.nazev||'Neznámý'):'Bez klienta';
+      const kBarva=zz.klientId?'var(--orange)':'#444';
+      html+='<div class="zaznam">';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+      html+='<div class="zaznam-datum">'+esc(fmtDate(zz.prichod))+'</div>';
+      html+='<button class="btn btn-secondary" style="padding:4px 12px;font-size:11px;width:auto;margin:0" onclick="openEdit('+zz.id+')">Upravit</button></div>';
+      html+='<div class="zaznam-row"><div class="zaznam-info">';
+      html+='<span>'+fmtTime(zz.prichod)+'</span><span>'+fmtTime(zz.odchod)+'</span>';
+      html+='<span style="color:var(--yellow)">pauza '+pm+' min</span>';
+      html+='<span style="color:'+kBarva+'">'+esc(kNazev)+'</span>';
+      html+='</div><div class="zaznam-right"><div class="zaznam-hodiny">'+h.toFixed(2)+' h</div>';
+      html+='<div class="zaznam-kc">'+fmtKc(kc)+'</div>';
+      html+='<button class="smazat" onclick="smazatZaznam('+zz.id+')">×</button></div></div>';
+      if(zz.popis){html+='<div class="zaznam-popis">'+esc(zz.popis)+'</div>';}
+      html+='</div>';
     });
     html+='</div>';
   });
-
-  const celkKc=Math.round(celkH*data.sazba);
-  html+='<div class="celkem-bar"><div><div class="celkem-label">Celková částka</div><div class="celkem-sub">'+celkH.toFixed(2)+' h × '+data.sazba+' Kč/h</div></div><div class="celkem-value">'+fmtKc(celkKc)+'</div></div>';
+  const otevreneKlice=Object.keys(otevrenyMesice).filter(k=>otevrenyMesice[k]);
+  let souhrnH=0,souhrnKc=0,souhrnLabel='Celková částka';
+  if(otevreneKlice.length>0){
+    otevreneKlice.forEach(function(k){
+      if(mesice[k]){mesice[k].zaznamy.forEach(function(zz){const h=calcNet(zz)/3600000;souhrnH+=h;souhrnKc+=h*getSazbaProKlienta(zz.klientId);});}
+    });
+    const nazvy=otevreneKlice.map(function(k){if(!mesice[k])return'';const n=fmtMesic(mesice[k].rok,mesice[k].mesic);return n.charAt(0).toUpperCase()+n.slice(1);}).filter(Boolean).join(', ');
+    souhrnLabel=nazvy;
+  }else{souhrnH=celkH;souhrnKc=z.reduce(function(s,zz){return s+calcNet(zz)/3600000*getSazbaProKlienta(zz.klientId);},0);}
+  html+='<div class="celkem-bar"><div><div class="celkem-label">'+esc(souhrnLabel)+'</div><div class="celkem-sub">'+souhrnH.toFixed(2)+' h</div></div><div class="celkem-value">'+fmtKc(Math.round(souhrnKc))+'</div></div>';
   el.innerHTML=html;
 }
 
@@ -441,26 +531,31 @@ function smazatZaznam(id){
 }
 
 function openPridat(){
-  var dnes=new Date().toISOString().split('T')[0];
+  const dnes=new Date().toISOString().split('T')[0];
   document.getElementById('pridat-datum').value=dnes;
   document.getElementById('pridat-prichod').value='06:00';
   document.getElementById('pridat-odchod').value='14:00';
   document.getElementById('pridat-pauza').value='30';
+  document.getElementById('pridat-popis').value='';
+  naplnitSelectKlienty('pridat-klient','');
   document.getElementById('pridat-modal').classList.add('open');
 }
 function closePridat(){document.getElementById('pridat-modal').classList.remove('open');}
 function savePridat(){
-  var datum=document.getElementById('pridat-datum').value;
-  var pc=document.getElementById('pridat-prichod').value;
-  var oc=document.getElementById('pridat-odchod').value;
-  var pauzaMin=parseInt(document.getElementById('pridat-pauza').value)||0;
+  const datum=document.getElementById('pridat-datum').value;
+  const pc=document.getElementById('pridat-prichod').value;
+  const oc=document.getElementById('pridat-odchod').value;
+  const pauzaMin=parseInt(document.getElementById('pridat-pauza').value)||0;
+  const klientId=document.getElementById('pridat-klient').value||'';
+  const popis=document.getElementById('pridat-popis').value.trim()||'';
   if(!datum||!pc||!oc){alert('Vyplň všechna pole!');return;}
-  var prichod=new Date(datum+'T'+pc+':00');
-  var odchod=new Date(datum+'T'+oc+':00');
-  if(odchod<=prichod){alert('Odchod musí být po příchodu!');return;}
-  var pauzaStart=new Date(prichod.getTime()+Math.round((odchod-prichod)/2));
-  var pauzaEnd=new Date(pauzaStart.getTime()+pauzaMin*60000);
-  var zaznam={id:Date.now(),prichod:prichod.toISOString(),odchod:odchod.toISOString(),pauzy:pauzaMin>0?[{start:pauzaStart.toISOString(),end:pauzaEnd.toISOString()}]:[],aktivniPauza:null};
+  const prichod=new Date(datum+'T'+pc+':00');
+  const odchod=new Date(datum+'T'+oc+':00');
+  const chyba=validateRecord(prichod,odchod,pauzaMin);
+  if(chyba){alert(chyba);return;}
+  const pauzaStart=new Date(prichod.getTime()+Math.round((odchod-prichod)/2));
+  const pauzaEnd=new Date(pauzaStart.getTime()+pauzaMin*60000);
+  const zaznam={id:Date.now(),prichod:prichod.toISOString(),odchod:odchod.toISOString(),pauzy:pauzaMin>0?[{start:pauzaStart.toISOString(),end:pauzaEnd.toISOString()}]:[],aktivniPauza:null,klientId,popis};
   data.zaznamy.push(zaznam);
   data.zaznamy.sort(function(a,b){return new Date(a.prichod)-new Date(b.prichod);});
   save();closePridat();renderPrehled();
@@ -470,12 +565,14 @@ function openEdit(id){
   const z=data.zaznamy.find(z=>z.id===id);
   if(!z)return;
   editId=id;
-  document.getElementById('edit-datum').textContent=fmtDate(z.prichod);
+  document.getElementById('edit-datum-label').textContent=fmtDate(z.prichod);
   const p=new Date(z.prichod);
   const o=new Date(z.odchod);
   document.getElementById('edit-prichod').value=p.getHours().toString().padStart(2,'0')+':'+p.getMinutes().toString().padStart(2,'0');
   document.getElementById('edit-odchod').value=o.getHours().toString().padStart(2,'0')+':'+o.getMinutes().toString().padStart(2,'0');
   document.getElementById('edit-pauza').value=getPauzaMin(z);
+  document.getElementById('edit-popis').value=z.popis||'';
+  naplnitSelectKlienty('edit-klient',z.klientId||'');
   document.getElementById('edit-modal').classList.add('open');
 }
 function closeEdit(){document.getElementById('edit-modal').classList.remove('open');editId=null;}
@@ -488,23 +585,41 @@ function saveEdit(){
   const oh=document.getElementById('edit-odchod').value.split(':');
   pDate.setHours(parseInt(ph[0]),parseInt(ph[1]),0);
   oDate.setHours(parseInt(oh[0]),parseInt(oh[1]),0);
+  const pauzaMin=parseInt(document.getElementById('edit-pauza').value)||0;
+  const chyba=validateRecord(pDate,oDate,pauzaMin);
+  if(chyba){alert(chyba);return;}
   z.prichod=pDate.toISOString();
   z.odchod=oDate.toISOString();
-  const pauzaMin=parseInt(document.getElementById('edit-pauza').value)||0;
   const pauzaStart=new Date(pDate.getTime()+Math.round((oDate-pDate)/2));
   const pauzaEnd=new Date(pauzaStart.getTime()+pauzaMin*60000);
   z.pauzy=pauzaMin>0?[{start:pauzaStart.toISOString(),end:pauzaEnd.toISOString()}]:[];
+  z.klientId=document.getElementById('edit-klient').value||'';
+  z.popis=document.getElementById('edit-popis').value.trim()||'';
   save();closeEdit();renderPrehled();
 }
 
 function renderFaktura(){
-  const z=data.zaznamy;
-  const celkH=z.reduce((s,z)=>s+calcNet(z),0)/3600000;
-  const celkKc=Math.round(celkH*data.sazba);
+  naplnitSelectKlienty('faktura-klient-filter',document.getElementById('faktura-klient-filter')?.value||'');
+  const filterKlient=document.getElementById('faktura-klient-filter')?.value||'';
+  const cislo=document.getElementById('faktura-cislo')?.value||getNextFakturaNum();
+  const datumVal=document.getElementById('faktura-datum')?.value;
+  const datumDnes=datumVal?new Date(datumVal):new Date();
+  const splatnostDni=parseInt(document.getElementById('faktura-splatnost')?.value)||14;
+  const datumSplatnost=new Date(datumDnes.getTime()+splatnostDni*86400000);
+  let z=data.zaznamy;
+  if(filterKlient)z=z.filter(zz=>zz.klientId===filterKlient);
   const el=document.getElementById('faktura-obsah');
-  const radky=z.length===0?'<tr><td colspan="5" style="text-align:center;color:#444;padding:20px">Žádné záznamy</td></tr>':
-    z.map(function(zz){const h=calcNet(zz)/3600000;return'<tr><td>'+(data.popis||'Svářečské práce')+'</td><td class="r" style="color:#666">'+fmtDate(zz.prichod)+'</td><td class="r">'+h.toFixed(2)+'</td><td class="r" style="color:#666">'+data.sazba+'</td><td class="r" style="color:var(--green)">'+fmtKc(Math.round(h*data.sazba))+'</td></tr>';}).join('');
-  el.innerHTML='<div class="fakt-header"><div><div class="fakt-title">FAKTURA</div><div style="font-size:10px;color:#555;margin-top:4px">Datum: '+new Date().toLocaleDateString('cs-CZ')+'</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:bold">'+(data.jmeno||'Vaše jméno')+'</div><div style="font-size:11px;color:#666">IČO: '+(data.ico||'–')+'</div></div></div>'+(data.odberatel?'<div style="margin-bottom:18px"><div style="font-size:8px;color:#555;letter-spacing:2px;margin-bottom:6px">Odběratel</div><div style="white-space:pre-line;font-size:12px;color:#aaa">'+data.odberatel+'</div></div>':'')+'<table class="fakt-table"><thead><tr><th>Popis</th><th class="r">Datum</th><th class="r">Hod.</th><th class="r">Kč/h</th><th class="r">Částka</th></tr></thead><tbody>'+radky+'</tbody></table><div class="fakt-celkem"><div class="fakt-celkem-box"><div class="fakt-celkem-label">Celkem k úhradě</div><div class="fakt-celkem-value">'+fmtKc(celkKc)+'</div><div class="fakt-celkem-sub">'+celkH.toFixed(2)+' h × '+data.sazba+' Kč/h</div></div></div>';
+  const klientNazev=filterKlient?(getKlienti().find(k=>k.id===filterKlient)?.nazev||''):'';
+  let celkH=0,celkKc=0;
+  const radkyHTML=z.length===0?'<tr><td colspan="5" style="text-align:center;color:#444;padding:20px">Žádné záznamy</td></tr>':z.map(function(zz){
+    const h=calcNet(zz)/3600000;
+    const sazba=getSazbaProKlienta(zz.klientId);
+    const kc=Math.round(h*sazba);
+    celkH+=h;celkKc+=kc;
+    const popisRadku=zz.popis||(zz.klientId?(getKlienti().find(k=>k.id===zz.klientId)?.nazev||data.popis):data.popis)||'Svářečské práce';
+    return'<tr><td>'+esc(popisRadku)+'</td><td class="r" style="color:#666">'+esc(fmtDate(zz.prichod))+'</td><td class="r">'+h.toFixed(2)+'</td><td class="r" style="color:#666">'+esc(String(sazba))+'</td><td class="r" style="color:var(--green)">'+esc(fmtKc(kc))+'</td></tr>';
+  }).join('');
+  el.innerHTML='<div class="fakt-header"><div><div class="fakt-title">FAKTURA</div><div style="font-size:10px;color:#555;margin-top:4px">Číslo: '+esc(cislo)+'</div><div style="font-size:10px;color:#555;margin-top:2px">Datum: '+esc(datumDnes.toLocaleDateString('cs-CZ'))+'</div><div style="font-size:10px;color:#555;margin-top:2px">Splatnost: '+esc(datumSplatnost.toLocaleDateString('cs-CZ'))+'</div>'+(klientNazev?'<div style="font-size:11px;color:var(--orange);margin-top:6px">'+esc(klientNazev)+'</div>':'')+'</div><div style="text-align:right"><div style="font-size:14px;font-weight:bold">'+esc(data.jmeno||'Vaše jméno')+'</div><div style="font-size:11px;color:#666">IČO: '+esc(data.ico||'–')+'</div></div></div>'+(data.odberatel?'<div style="margin-bottom:18px"><div style="font-size:8px;color:#555;letter-spacing:2px;margin-bottom:6px">Odběratel</div><div style="white-space:pre-line;font-size:12px;color:#aaa">'+esc(data.odberatel)+'</div></div>':'')+'<table class="fakt-table"><thead><tr><th>Popis</th><th class="r">Datum</th><th class="r">Hod.</th><th class="r">Kč/h</th><th class="r">Částka</th></tr></thead><tbody>'+radkyHTML+'</tbody></table><div class="fakt-celkem"><div class="fakt-celkem-box"><div class="fakt-celkem-label">Celkem k úhradě</div><div class="fakt-celkem-value">'+esc(fmtKc(celkKc))+'</div><div class="fakt-celkem-sub">'+celkH.toFixed(2)+' h · splatnost '+esc(datumSplatnost.toLocaleDateString('cs-CZ'))+'</div></div></div>';
 }
 
 function renderNastaveni(){
@@ -535,13 +650,22 @@ function exportData(){
 function importData(e){
   const file=e.target.files[0];if(!file)return;
   const r=new FileReader();
-  r.onload=ev=>{try{data=JSON.parse(ev.target.result);save();renderNastaveni();renderDnes();alert('Data importována!');}catch{alert('Chyba při importu.');}};
+  r.onload=ev=>{
+    try{
+      const parsed=JSON.parse(ev.target.result);
+      if(!parsed||typeof parsed!=='object')throw new Error('Neplatný formát');
+      if(!Array.isArray(parsed.zaznamy))throw new Error('Chybí záznamy');
+      data=Object.assign(data,parsed);
+      save();renderNastaveni();renderDnes();renderKlientiList();
+      alert('Data importována! Načteno '+data.zaznamy.length+' záznamů.');
+    }catch(e){alert('Chyba při importu: '+e.message);}
+  };
   r.readAsText(file);
 }
 function smazatVse(){
-  if(!confirm('Opravdu smazat VŠECHNA data? Tuto akci nelze vrátit.'))return;
-  data={zaznamy:[],aktualniDen:null,sazba:450,jmeno:'',ico:'',odberatel:'',popis:'Svářečské práce'};
-  save();renderDnes();renderNastaveni();
+  if(!confirm('Opravdu smazat VŠECHNA data?'))return;
+  data={zaznamy:[],klienti:[],aktualniDen:null,sazba:450,jmeno:'',ico:'',odberatel:'',popis:'Svářečské práce'};
+  save();renderDnes();renderNastaveni();renderKlientiList();
 }
 function openFeedback(){
   selectedStar=0;
@@ -566,7 +690,16 @@ function sendFeedback(){
   document.getElementById('sent-msg').style.display='block';
   setTimeout(closeFeedback,2500);
 }
-load();renderDnes();renderNastaveni();
+
+load();renderDnes();renderNastaveni();renderKlientiList();
+naplnitSelectKlienty('prichod-klient','');
+naplnitSelectKlienty('pridat-klient','');
+naplnitSelectKlienty('faktura-klient-filter','');
+const fd=document.getElementById('faktura-datum');
+if(fd)fd.value=new Date().toISOString().split('T')[0];
+const fc=document.getElementById('faktura-cislo');
+if(fc&&!fc.value)fc.value=new Date().getFullYear()+'-001';
+
 setInterval(function(){
   if(data.aktualniDen&&!data.aktualniDen.odchod){
     const el=document.getElementById('stat-hodiny');
@@ -576,4 +709,4 @@ setInterval(function(){
 },30000);
 </script>
 </body>
-</html>                                                                                                                                                  </nav>
+</html>
